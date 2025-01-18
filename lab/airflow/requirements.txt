@@ -1,0 +1,17 @@
+apache-airflow-providers-amazon 
+apache-airflow-providers-apache-spark 
+apache-airflow-providers-celery 
+apache-airflow-providers-databricks 
+apache-airflow-providers-microsoft-mssql 
+apache-airflow-providers-common-sql 
+apache-airflow-providers-databricks 
+apache-airflow-providers-jdbc 
+apache-airflow-providers-docker 
+apache-airflow-providers-postgres 
+apache-airflow-providers-apache-kafka 
+apache-airflow-providers-apache-iceberg 
+apache-airflow-providers-pgvector 
+python-dotenv
+statsd
+flask-session==0.5.0
+

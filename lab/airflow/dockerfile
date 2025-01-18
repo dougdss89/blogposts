@@ -1,0 +1,61 @@
+FROM apache/airflow:2.8.3-python3.10
+
+USER root
+
+# Installation of necessary packages
+RUN apt-get update && \
+    apt-get install -y \
+        default-jdk \
+        krb5-user \
+        krb5-config \
+        sudo \
+        wget \
+        vim \
+        net-tools \
+        iputils-ping \
+        && \
+    apt-get clean
+
+# Create the spark user and add to the sudo group
+RUN useradd -m -s /bin/bash spark && \
+    echo 'spark ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/spark
+
+# Create the airflow user with a password and root permission
+RUN echo 'airflow:airflow' | chpasswd && \
+    usermod -aG sudo airflow
+
+# Download and install  Apache Spark 3.5.3
+# RUN wget https://dlcdn.apache.org/spark/spark-3.5.3/spark-3.5.3-bin-hadoop3.tgz -O /tmp/spark-3.5.3-bin-hadoop3.tgz && \
+#     tar -xvzf /tmp/spark-3.5.3-bin-hadoop3.tgz -C /opt/ && \
+#     mv /opt/spark-3.5.3-bin-hadoop3 /opt/spark && \
+#     rm /tmp/spark-3.5.3-bin-hadoop3.tgz
+
+USER airflow
+
+# Upgrade pip to the latest version
+RUN python -m pip install --upgrade pip
+
+# Install Python packages for Hadoop and Spark
+RUN pip install pyspark hdfs
+
+# Copy the requirements.txt file to the container and install Airflow packages
+COPY --chown=airflow:airflow ./requirements.txt /requirements.txt
+
+# Airflow configuration
+ENV AIRFLOW_HOME=/opt/airflow
+
+COPY airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
+
+# Hadoop and Spark configurations
+# COPY --chown=airflow:airflow ./hadoop /opt/hadoop
+# COPY --chown=airflow:airflow ./spark /opt/spark
+
+# Add Hadoop and Spark environment variables
+ENV HADOOP_CONF_DIR=/dockervol/hadoop/etc/hadoop/
+ENV HADOOP_HOME=/dockervol/hadoop/
+ENV SPARK_HOME=/dockervol/spark/
+ENV SPARK_CONF_DIR=/dockervol/spark/conf/
+
+# Initialize Airflow
+ENTRYPOINT [ "airflow" ]
+CMD ["standalone"]

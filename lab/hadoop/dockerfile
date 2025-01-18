@@ -1,0 +1,43 @@
+# Use the official Ubuntu 20.04 as a base image
+FROM ubuntu:20.04
+
+# Set environment variables to prevent prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update the package list and install necessary packages
+RUN apt-get update && apt-get install -y \
+    sudo \
+    openssh-server \
+    vim \
+    wget \
+    curl \
+    net-tools \
+    iputils-ping \
+    gnupg \
+    software-properties-common
+
+# Create users hadoop and spark with passwordless sudo
+RUN useradd -m -s /bin/bash hadoop && \
+    useradd -m -s /bin/bash spark && \
+    echo 'hadoop ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+    echo 'spark ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# Expose the specified ports
+EXPOSE 50070 50071 50072 50073  50074 50075 50076 50077 50078 50010 50020 50090 \
+       8020 8021 8022 8023 8024 8025 8026 8027 8028 \
+       9000 9001 9002 9003 9004 9005 9006 9007 \
+       9862 9863 9864 9865 9866 9867 9868 9869 9870 9872 9873 \
+       8030 8031 8032 8033 8034 8035 8036 8037 \
+       8040 8041 8042 8043 8044 8045 8046 8047 8048 8049 \
+       22 \
+       2180 2181 2182 2183 2184 2185 2186 2187 2188 \
+       9001 9002 9003 9004 9005 9006 9007 9008 \
+       3881 3882 3883 3884 3885 3887 3888 3889 3890 3891 \
+       2885 2887 2886 2888 2889  9871 \
+       8486 8487 8488 8485 8482 2184  
+
+# Start SSH service
+RUN mkdir /var/run/sshd
+
+CMD ["/usr/sbin/sshd", "-D"]
+

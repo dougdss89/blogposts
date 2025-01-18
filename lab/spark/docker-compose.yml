@@ -1,0 +1,101 @@
+services:
+  sparkmaster:
+    container_name: spark-master
+    build: .
+    image: sparkairflow:spark
+    entrypoint: ['./entrypoint.sh', 'master']
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9090" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+    volumes:
+      - ./jobs:/opt/spark/jobs:rw
+      - ./devapplication:/opt/spark/development:rw
+      - /dockervol/sparkjobs:/opt/spark/jobs:rw
+      - spark-logs:/opt/spark/spark-events:rw
+      - dockervol:/dockervol:rw
+    env_file:
+      - .env.spark
+
+    environment:
+      - HADOOP_CONF_DIR=/dockervol/hadoop/etc/hadoop/
+      - HADOOP_HOME=/dockervol/hadoop
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - PYTHONPATH=/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip:/opt/spark/jobs:$PYTHONPATH
+    ports:
+      - '9090:8080'
+      - '7077:7077'
+    networks:
+      - hadoopcluster
+
+
+  spark-history-server:
+    container_name: sparkhistory
+    image: sparkairflow:spark
+    entrypoint: ['./entrypoint.sh', 'history']
+    depends_on:
+      - sparkmaster
+    env_file:
+      - .env.spark
+    environment:
+      - HADOOP_CONF_DIR=/dockervol/hadoop/etc/hadoop/
+      - HADOOP_HOME=/dockervol/hadoop
+      - PYTHONPATH=/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip:/opt/spark/jobs:$PYTHONPATH
+
+    volumes:
+      - ./jobs:/opt/spark/jobs:rw
+      - ./devapplication:/opt/spark/development:rw
+      - /dockervol/sparkjobs:/opt/spark/jobs:rw
+      - spark-logs:/opt/spark/spark-events:rw
+      - dockervol:/dockervol:rw
+
+    ports:
+      - '18080:18080'
+    networks:
+      - hadoopcluster
+
+  spark-worker:
+    image: sparkairflow:spark
+    entrypoint: ['./entrypoint.sh', 'worker']
+    depends_on:
+      - sparkmaster
+    env_file:
+      - .env.spark
+    environment:
+      - HADOOP_CONF_DIR=/dockervol/hadoop/etc/hadoop/
+      - HADOOP_HOME=/dockervol/hadoop
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=12g
+      - SPARK_WORKER_CORES=4
+      - PYTHONPATH=/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip:/opt/spark/jobs:$PYTHONPATH
+
+    volumes:
+      - ./jobs:/opt/spark/jobs:rw
+      - ./devapplication:/opt/spark/development:rw
+      - /dockervol/sparkjobs:/opt/spark/jobs:rw
+      - spark-logs:/opt/spark/spark-events:rw
+      - dockervol:/dockervol:rw
+      
+    networks:
+      - hadoopcluster
+
+networks:
+  hadoopcluster:
+    external: true
+
+volumes:
+  sparkapps:
+    external: true
+
+  dockervol:
+    external: true
+
+  spark-logs:
+    external: true

@@ -1,0 +1,12 @@
+docker run -d \
+ --network network_name \
+ --hostname container_name.hdp.com \
+ -p 50070:50070 \
+ -p 8000:8000 \
+ -p 8020:8020 \
+ -p 9000:9000 \
+ -p 8088:8088 \
+ -p 8485:8485 \
+ -v blog_volume_test:/volume_test \ --maping created volume to root path 
+ --privileged --cap-add=NET_ADMIN --cap-add=NET_RAW \
+ --name container_name image_name:tag_name
