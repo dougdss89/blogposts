@@ -1,0 +1,62 @@
+services:
+  nessie-server:
+    image: bitnami/nessie:0.102.5-debian-12-r2
+    container_name: nessie-server
+    hostname: nessie
+    networks:
+      - hadoopcluster
+    ports:
+      - "19120:19120"
+      - "9010:9010"
+    environment:
+      # ===== Configurações Básicas =====
+      - NESSIE_SERVER_DEFAULT_BRANCH=main
+      - NESSIE_SERVER_SEND_STACKTRACE_TO_CLIENT=false
+      - QUARKUS_HTTP_PORT=19120
+      - QUARKUS_MANAGEMENT_PORT=9010
+      - QUARKUS_LOG_LEVEL=INFO
+      - QUARKUS_LOG_CONSOLE_LEVEL=INFO
+      - QUARKUS_LOG_CONSOLE_JSON=false
+      - QUARKUS_LOG_FILE_LEVEL=INFO
+      - QUARKUS_LOG_FILE_JSON=false
+
+      # ===== QUARKUS FRAMEWORK DB CONFIG =====
+      - QUARKUS_DATASOURCE_DB_KIND=postgresql
+      - QUARKUS_DATASOURCE_POSTGRESQL_JDBC_URL=jdbc:postgresql://pgprojeto:5432/nessiedb
+      - QUARKUS_DATASOURCE_POSTGRESQL_USERNAME=admin
+      - QUARKUS_DATASOURCE_POSTGRESQL_PASSWORD=admin
+      - QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=update
+      - QUARKUS_DATASOURCE_JDBC_POOL_MAX_SIZE=10
+      - QUARKUS_DATASOURCE_JDBC_POOL_MIN_SIZE=2
+
+      # Configurações do MinIO (use o nome do serviço ou IP do container)
+      - NESSIE_CATALOG_ICEBERG__CONFIG_DEFAULTS__S3_ENDPOINT=http://minio-minio-1:9000  # Nome do container
+  
+      # Credenciais (obrigatórias)
+      - NESSIE_CATALOG_ICEBERG__CONFIG_DEFAULTS__S3_ACCESS_KEY_ID=minioadmin
+      - NESSIE_CATALOG_ICEBERG__CONFIG_DEFAULTS__S3_SECRET_ACCESS_KEY=minioadmin
+      - NESSIE_CATALOG_ICEBERG__CONFIG_DEFAULTS__S3_PATH_STYLE_ACCESS=true
+
+      # Configurações extras do Hadoop (opcional, mas recomendado)
+      - HADOOP_OPTS=-Dfs.s3a.access.key=minioadmin -Dfs.s3a.secret.key=minioadmin -Dfs.s3a.endpoint=http://minio-minio-1:9000 -Dfs.s3a.path.style.access=true
+      
+      # ===== Configurações de Health Check =====
+      - NESSIE_CATALOG_OBJECT_STORES_HEALTH_CHECK_ENABLED=true
+      - NESSIE_CATALOG_ERROR_HANDLING_THROTTLED_RETRY_AFTER=PT10S
+
+      # ===== Configurações do PostgreSQL w/ Nessie =====
+      - NESSIE_VERSION_STORE_PERSIST_JDBC_DATASOURCE=postgresql
+      - NESSIE_VERSION_STORE_TYPE=JDBC
+      - NESSIE_VERSION_STORE_JDBC_POOL_MAX_SIZE=10
+      - NESSIE_VERSION_STORE_JDBC_POOL_MIN_SIZE=2
+
+    volumes:
+      - dockervol:/dockervol
+
+volumes:
+  dockervol:
+    external: true
+
+networks:
+  hadoopcluster:
+    external: true
